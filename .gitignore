@@ -1,0 +1,20 @@
+# Local translation outputs and temporary downloads
+outputs/
+tmp_pdf2zh_download/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Local/editor files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
