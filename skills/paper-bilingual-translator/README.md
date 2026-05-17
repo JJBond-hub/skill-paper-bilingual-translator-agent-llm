@@ -1,74 +1,99 @@
 # paper-bilingual-translator
 
-`paper-bilingual-translator` 是一个 Codex Skill，用于指导 Codex 或其他 AI Agent 使用 PDFMathTranslate / `pdf2zh` 将英文科研论文 PDF 翻译成中文阅读 PDF。
+`paper-bilingual-translator` is a Codex Skill for guiding Codex or another AI agent to translate English academic paper PDFs into Chinese reading PDFs with PDFMathTranslate / `pdf2zh`.
 
-它的范围刻意保持很窄：不做论文问答、文献综述写作、Zotero 集成、Obsidian 集成、Streamlit 界面开发，也不做逐段手工翻译。
+This README is written for language models and agents. Treat `SKILL.md` as the authoritative instruction file for the actual workflow, command sequence, QA requirements, and failure handling.
 
-## 安装位置
+## Scope
 
-项目内副本：
+Use this Skill only when the user wants to:
+
+- translate an English academic paper PDF into Chinese;
+- generate `pdf2zh` `*-mono.pdf` and `*-dual.pdf` outputs;
+- preserve the source paper layout, formulas, figures, tables, captions, and references as much as possible;
+- process a local PDF, an arXiv PDF URL, or a directory of paper PDFs;
+- deliver real PDF files plus a concise QA summary.
+
+Do not use this Skill for paper Q&A, abstract writing, literature reviews, plain text translation, Word document translation, web page translation, or Zotero / Obsidian / Streamlit integration work.
+
+## Upstream Tool
+
+This Skill wraps the workflow around PDFMathTranslate / `pdf2zh`; it does not implement the PDF translation engine itself.
+
+Upstream references:
+
+- PDFMathTranslate GitHub: <https://github.com/PDFMathTranslate/PDFMathTranslate>
+- pdf2zh PyPI: <https://pypi.org/project/pdf2zh/>
+
+When tool behavior, CLI options, or installation details differ from this repository, prefer the upstream documentation unless `SKILL.md` records a local workflow decision.
+
+## Location
+
+Repository copy:
 
 ```text
 skills/paper-bilingual-translator/
 ```
 
-Codex 本地技能副本：
+Typical local Codex skill copy:
 
 ```text
 C:\Users\liu'jia'yao\.codex\skills\paper-bilingual-translator\
 ```
 
-更新技能时，建议保持两个位置的内容同步。
+When updating the Skill, keep the repository copy and any installed local Codex copy synchronized when needed.
 
-## 输出文件
+## Expected Outputs
 
-`pdf2zh` 通常会生成：
+`pdf2zh` normally generates:
 
-- `*-mono.pdf`：中文翻译 PDF。
-- `*-dual.pdf`：双语对照 PDF。
+- `*-mono.pdf`: Chinese translation PDF.
+- `*-dual.pdf`: bilingual comparison PDF.
 
-如果想获得常见的“左边原文、右边中文”阅读体验，请在 PDF 阅读器中打开 `dual.pdf` 并启用双页或面对页视图。`dual.pdf` 通常是原文页和译文页交错排列，而不是每一页都做成宽幅左右分栏。
+The `dual.pdf` output usually interleaves original and translated pages. To get the common "original on the left, Chinese on the right" reading experience, open `dual.pdf` in a PDF reader and enable two-page or facing-pages view.
 
-## 推荐工作流
+## Standard Agent Workflow
 
-先运行单页冒烟测试：
+For a new paper, first run a one-page smoke test:
 
 ```bash
 pdf2zh input.pdf -li en -lo zh -o output_smoke -p 1 -t 1
 ```
 
-检查通过后再运行全文翻译：
+If the smoke test is acceptable, run the full translation:
 
 ```bash
 pdf2zh input.pdf -li en -lo zh -o output_full -t 1
 ```
 
-最后运行 QA：
+Then run the bundled QA helper:
 
 ```bash
 python scripts/qa_pdf2zh_output.py --source input.pdf --output-dir output_full --report output_full/qa_report.md
 ```
 
-## 安装说明
+Report the generated files, page counts, QA findings, and any pages that need manual review.
 
-Windows 上建议优先使用 Python 3.12：
+## Installation Notes
+
+On Windows, prefer Python 3.12 for the tested `pdf2zh` path:
 
 ```bash
 py -3.12 -m pip install --user --progress-bar off --only-binary=:all: pdf2zh==1.9.11
 ```
 
-本地测试中的常见注意事项：
+Observed local notes:
 
-- `pdf2zh` 依赖较重，安装可能需要几分钟。
-- 直接执行 `pip install pdf2zh` 时，依赖解析阶段可能看起来像是卡住了。
-- 首次翻译可能会下载 doclayout ONNX 模型和中文字体。
-- `pdf2zh.exe` 可能安装在 Python 用户级 `Scripts` 目录下，未必自动进入 `PATH`。
+- `pdf2zh` has heavy dependencies and installation may take several minutes.
+- A plain `pip install pdf2zh` may appear stuck during dependency resolution.
+- The first translation may download the doclayout ONNX model and Chinese font assets.
+- `pdf2zh.exe` may be installed in the Python user-level `Scripts` directory and may not be on `PATH`.
 
-## 已知输出风险
+## Known Output Risks
 
-务必检查标题页和摘要页。以 SpatialBench 测试论文为例，第一页译文曾出现摘要区域英文残留、侧边标记排版不稳等问题。这是一类常见 PDF 版式风险，不代表需要立刻放弃 `pdf2zh`。
+Always inspect title and abstract pages. In local SpatialBench testing, the first translated page showed partial English residue in the abstract area and unstable side-marker layout. This is a common PDF layout risk and should be reported clearly rather than hidden.
 
-可尝试的重试命令：
+Useful retry patterns:
 
 ```bash
 pdf2zh input.pdf -li en -lo zh -o retry_page1 -p 1 --ignore-cache -t 1
@@ -77,7 +102,7 @@ pdf2zh input.pdf -li en -lo zh -o retry_compatible --compatible -t 1
 pdf2zh input.pdf -li en -lo zh -o retry_fonts --skip-subset-fonts -t 1
 ```
 
-## 文件结构
+## Files
 
 ```text
 paper-bilingual-translator/
