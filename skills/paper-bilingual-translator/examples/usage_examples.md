@@ -50,13 +50,25 @@ pdf2zh https://arxiv.org/pdf/2501.00001.pdf -li en -lo zh -o translated_arxiv -t
 
 > 我需要类似左边英文、右边中文的论文阅读 PDF。
 
-说明：
+如果用户只需要阅读器中的左右效果：
 
 ```text
 使用生成的 *-dual.pdf，并在 PDF 阅读器中开启双页或面对页视图。
 ```
 
-如果用户要求每一个物理 PDF 页面都做成左右并排的宽页面，应视为 `pdf2zh` 之后的额外 PDF 后处理任务。
+如果用户要求每一个物理 PDF 页面都做成左右并排的宽页面，在全文翻译后运行拼版脚本：
+
+```bash
+python scripts/impose_side_by_side_pdf.py --source paper.pdf --output-dir translated_full --output translated_full/paper-side-by-side.pdf
+```
+
+只检查前几页拼版效果时可以限制页码：
+
+```bash
+python scripts/impose_side_by_side_pdf.py --source paper.pdf --output-dir translated_full --output translated_full/paper-side-by-side-p1-3.pdf --pages 1-3
+```
+
+交付时应说明 `*-side-by-side.pdf` 是额外后处理结果，左侧来自源 PDF，右侧来自 `*-mono.pdf`。
 
 ## 摘要页问题或英文残留
 

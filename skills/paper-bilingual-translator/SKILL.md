@@ -13,6 +13,7 @@ The expected deliverables are real PDF files, usually:
 
 - `*-mono.pdf`: Chinese translation PDF
 - `*-dual.pdf`: bilingual comparison PDF
+- `*-side-by-side.pdf`: optional imposed PDF with the original page on the left and the Chinese translation on the right, one wide physical page per source page
 
 `pdf2zh` is the command-line interface of the PDFMathTranslate toolchain. Do not ask the user to switch from `pdf2zh` to PDFMathTranslate as if they were separate tools.
 
@@ -57,7 +58,11 @@ Explain the comparison layout clearly:
 
 - `dual.pdf` normally interleaves original and translated pages. For an 18-page source PDF, a normal `dual.pdf` may have 36 pages.
 - To get the visual effect of "left side original, right side Chinese", open `dual.pdf` in a PDF reader and enable two-page / facing-pages view.
-- If the user requires one physical wide page with English on the left half and Chinese on the right half, treat that as a post-processing imposition task after `pdf2zh`; it is not the default `pdf2zh` output.
+- If the user requires one physical wide page with English on the left half and Chinese on the right half, run the bundled imposition script after `pdf2zh`. This is a post-processing step that uses the source PDF and the translated `*-mono.pdf`.
+
+```bash
+python scripts/impose_side_by_side_pdf.py --source input.pdf --output-dir output_full --output output_full/input-side-by-side.pdf
+```
 
 ## Environment Setup
 
@@ -106,13 +111,19 @@ pdf2zh input.pdf -li en -lo zh -o output_smoke -p 1 -t 1
 pdf2zh input.pdf -li en -lo zh -o output_full -t 1
 ```
 
-6. Run QA on the output:
+6. If the user requested a physical left-original / right-Chinese page layout, create the side-by-side PDF from the source PDF and the translated `*-mono.pdf`:
+
+```bash
+python scripts/impose_side_by_side_pdf.py --source input.pdf --output-dir output_full --output output_full/input-side-by-side.pdf
+```
+
+7. Run QA on the output:
 
 ```bash
 python scripts/qa_pdf2zh_output.py --source input.pdf --output-dir output_full --report output_full/qa_report.md
 ```
 
-7. Report the output directory, generated files, page counts, and known risks.
+8. Report the output directory, generated files, page counts, side-by-side output if created, and known risks.
 
 ## Command Patterns
 
@@ -139,6 +150,19 @@ Specific pages for debugging:
 ```bash
 pdf2zh paper.pdf -li en -lo zh -o translated_page1 -p 1 -t 1
 pdf2zh paper.pdf -li en -lo zh -o translated_pages1_3 -p 1-3 -t 1
+```
+
+Physical left-original / right-Chinese imposition after full translation:
+
+```bash
+python scripts/impose_side_by_side_pdf.py --source paper.pdf --output-dir translated --output translated/paper-side-by-side.pdf
+```
+
+Specific imposed pages for visual checking:
+
+```bash
+python scripts/impose_side_by_side_pdf.py --source paper.pdf --output-dir translated --output translated/paper-side-by-side-p1.pdf --pages 1
+python scripts/impose_side_by_side_pdf.py --source paper.pdf --output-dir translated --output translated/paper-side-by-side-p1-3.pdf --pages 1-3
 ```
 
 Compatibility retry:
@@ -175,8 +199,10 @@ Minimum checks:
 - `dual.pdf` exists and can be opened.
 - `mono.pdf` page count equals the source page count.
 - `dual.pdf` page count is usually twice the source page count.
+- If `side-by-side.pdf` is requested, its page count equals the source page count, and each page is wider than either input page.
 - At least the first pages of `mono.pdf` contain Chinese text.
 - For `dual.pdf`, translated pages contain Chinese; original pages may not.
+- For `side-by-side.pdf`, visually inspect at least the title page, abstract page, first body page, and one figure/table page to confirm left/right placement.
 - Title page, abstract, figure captions, table captions, references, and the first body page are manually inspected or flagged for manual inspection.
 
 Use the bundled QA helper when available:
@@ -243,6 +269,7 @@ When finished, report:
 - input file or directory
 - output directory
 - generated `mono` and `dual` PDF filenames
+- generated `side-by-side` PDF filename when requested
 - page counts
 - whether the dual PDF should be viewed in two-page mode
 - QA result summary
