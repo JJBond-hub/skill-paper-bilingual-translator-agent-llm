@@ -68,12 +68,19 @@ python scripts/impose_side_by_side_pdf.py --source input.pdf --output-dir output
 
 Prefer Python 3.10-3.12. Avoid Python 3.13+ unless the installed `pdf2zh` version explicitly supports it.
 
+Before installing, read [`docs/INSTALL-TRAPS.md`](docs/INSTALL-TRAPS.md). A clean install currently fails in four independent ways — a bracketed IPv6 entry in `NO_PROXY` that crashes `import pdf2zh`, two dependency version conflicts, and a default translation engine that hangs instead of erroring. Each has a verified fix and the document gives a setup order that avoids hitting them one at a time.
+
 Check availability:
 
 ```bash
 pdf2zh --help
 pdf2zh --version
 ```
+
+If any command above fails with an `ImportError`, an `httpx.InvalidURL`, or hangs
+without output, go straight to [`docs/INSTALL-TRAPS.md`](docs/INSTALL-TRAPS.md)
+rather than debugging from the traceback — the visible failure is usually a
+symptom of one of the four documented causes.
 
 On Windows, `pdf2zh.exe` may be installed under the Python user Scripts directory and not be on `PATH`, for example:
 
