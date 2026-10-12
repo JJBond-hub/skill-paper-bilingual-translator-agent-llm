@@ -9,17 +9,19 @@
 推荐先执行：
 
 ```bash
-pdf2zh paper.pdf -li en -lo zh -o translated_smoke -p 1 -t 1
+python scripts/run_pdf2zh_workflow.py --source paper.pdf --output-root translated_paper
 ```
 
-在运行全文翻译前先检查第 1 页，重点查看标题、作者信息、摘要、侧边标记、URL 和第一节正文。
+该命令会先生成 `translated_paper/smoke`，再生成 `translated_paper/full`。它默认使用 `--ignore-cache`，避免第一页冒烟测试结果污染全文翻译。
+
+在确认第 1 页冒烟结果时，重点查看标题、作者信息、摘要、侧边标记、URL 和第一节正文。
 
 ## 全文翻译
 
 冒烟测试通过后执行：
 
 ```bash
-pdf2zh paper.pdf -li en -lo zh -o translated_full -t 1
+pdf2zh paper.pdf -li en -lo zh -o translated_full -t 1 --ignore-cache
 ```
 
 然后运行：
@@ -62,6 +64,12 @@ pdf2zh https://arxiv.org/pdf/2501.00001.pdf -li en -lo zh -o translated_arxiv -t
 python scripts/impose_side_by_side_pdf.py --source paper.pdf --output-dir translated_full --output translated_full/paper-side-by-side.pdf
 ```
 
+或直接用安全工作流一次完成 smoke、full 和拼版：
+
+```bash
+python scripts/run_pdf2zh_workflow.py --source paper.pdf --output-root translated_paper --side-by-side
+```
+
 只检查前几页拼版效果时可以限制页码：
 
 ```bash
@@ -91,6 +99,26 @@ pdf2zh paper.pdf -li en -lo zh -o retry_fonts -p 1 --skip-subset-fonts --ignore-
 ```
 
 如果问题仍然存在，应明确报告受影响页面，并把标题/摘要的手工修正作为单独任务处理。
+
+## 冒烟测试后第一页被跳过或只翻译一部分
+
+用户请求：
+
+> 第一页测试通过后，全文翻译里的第一页好像没有重新翻译。
+
+不要复用冒烟测试目录，也不要把 `-p 1` 带到全文翻译命令中。推荐直接重新跑安全工作流：
+
+```bash
+python scripts/run_pdf2zh_workflow.py --source paper.pdf --output-root translated_paper_retry
+```
+
+如果手动执行，使用新的全文输出目录，并强制刷新缓存：
+
+```bash
+pdf2zh paper.pdf -li en -lo zh -o translated_full_retry -t 1 --ignore-cache
+```
+
+完成后检查 `mono.pdf` 第 1 页，确认标题、图题、摘要和正文都不是异常英文残留。
 
 ## 批量翻译
 

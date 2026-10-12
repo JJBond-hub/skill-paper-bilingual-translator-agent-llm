@@ -65,13 +65,16 @@ python scripts/impose_side_by_side_pdf.py --source input.pdf --output-dir output
 For a new paper, first run a one-page smoke test:
 
 ```bash
-pdf2zh input.pdf -li en -lo zh -o output_smoke -p 1 -t 1
+python scripts/run_pdf2zh_workflow.py --source input.pdf --output-root output_paper
 ```
 
-If the smoke test is acceptable, run the full translation:
+The workflow runner creates separate `smoke/` and `full/` output directories and uses `--ignore-cache` by default. This prevents the page-1 smoke test from contaminating or replacing the first page in the full translation.
+
+If running pdf2zh manually, keep smoke and full outputs separate, refresh the cache, and make sure the full command does not include `-p 1`:
 
 ```bash
-pdf2zh input.pdf -li en -lo zh -o output_full -t 1
+pdf2zh input.pdf -li en -lo zh -o output_smoke -p 1 -t 1 --ignore-cache
+pdf2zh input.pdf -li en -lo zh -o output_full -t 1 --ignore-cache
 ```
 
 Then run the bundled QA helper:
@@ -126,5 +129,6 @@ paper-bilingual-translator/
 │   └── usage_examples.md
 └── scripts/
     ├── impose_side_by_side_pdf.py
+    ├── run_pdf2zh_workflow.py
     └── qa_pdf2zh_output.py
 ```
