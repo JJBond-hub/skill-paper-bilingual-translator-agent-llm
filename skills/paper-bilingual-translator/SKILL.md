@@ -105,39 +105,57 @@ Observed installation notes:
 
 1. Confirm the input is a local PDF path, arXiv PDF URL, or directory of PDFs.
 2. Check `pdf2zh --help` and `pdf2zh --version`.
-3. For a new paper, run a one-page smoke test before translating the full file:
+3. For a new single paper, prefer the bundled safe workflow runner. It creates separate `smoke/` and `full/` directories and passes `--ignore-cache` to both pdf2zh calls so the full translation cannot accidentally reuse page-1 smoke-test state:
 
 ```bash
-pdf2zh input.pdf -li en -lo zh -o output_smoke -p 1 -t 1
+python scripts/run_pdf2zh_workflow.py --source input.pdf --output-root output_paper
 ```
 
-4. Inspect the smoke-test output, especially the title page, authors, abstract, and first section.
-5. If the smoke test is acceptable, run the full translation:
+If the user requested a physical left-original / right-Chinese page layout, include:
 
 ```bash
-pdf2zh input.pdf -li en -lo zh -o output_full -t 1
+python scripts/run_pdf2zh_workflow.py --source input.pdf --output-root output_paper --side-by-side
 ```
 
-6. If the user requested a physical left-original / right-Chinese page layout, create the side-by-side PDF from the source PDF and the translated `*-mono.pdf`:
+4. If running the commands manually, run a one-page smoke test in a dedicated smoke directory:
+
+```bash
+pdf2zh input.pdf -li en -lo zh -o output_smoke -p 1 -t 1 --ignore-cache
+```
+
+5. Inspect the smoke-test output, especially the title page, authors, abstract, and first section.
+6. If the smoke test is acceptable, run the full translation in a different full-output directory and refresh cache. Do not reuse `output_smoke` for full translation, and do not keep `-p 1` in the full command:
+
+```bash
+pdf2zh input.pdf -li en -lo zh -o output_full -t 1 --ignore-cache
+```
+
+7. If the user requested a physical left-original / right-Chinese page layout, create the side-by-side PDF from the source PDF and the translated `*-mono.pdf`:
 
 ```bash
 python scripts/impose_side_by_side_pdf.py --source input.pdf --output-dir output_full --output output_full/input-side-by-side.pdf
 ```
 
-7. Run QA on the output:
+8. Run QA on the output:
 
 ```bash
 python scripts/qa_pdf2zh_output.py --source input.pdf --output-dir output_full --report output_full/qa_report.md
 ```
 
-8. Report the output directory, generated files, page counts, side-by-side output if created, and known risks.
+9. Report the output directory, generated files, page counts, side-by-side output if created, and known risks.
 
 ## Command Patterns
 
 Single local paper:
 
 ```bash
-pdf2zh paper.pdf -li en -lo zh -o translated -t 1
+python scripts/run_pdf2zh_workflow.py --source paper.pdf --output-root translated_paper
+```
+
+Manual full translation without smoke:
+
+```bash
+pdf2zh paper.pdf -li en -lo zh -o translated_full -t 1 --ignore-cache
 ```
 
 arXiv PDF:
@@ -155,8 +173,8 @@ pdf2zh --dir papers -li en -lo zh -o translated -t 1
 Specific pages for debugging:
 
 ```bash
-pdf2zh paper.pdf -li en -lo zh -o translated_page1 -p 1 -t 1
-pdf2zh paper.pdf -li en -lo zh -o translated_pages1_3 -p 1-3 -t 1
+pdf2zh paper.pdf -li en -lo zh -o translated_page1 -p 1 -t 1 --ignore-cache
+pdf2zh paper.pdf -li en -lo zh -o translated_pages1_3 -p 1-3 -t 1 --ignore-cache
 ```
 
 Physical left-original / right-Chinese imposition after full translation:
@@ -232,6 +250,16 @@ Title pages and abstract pages are high-risk because academic PDFs often combine
 - tightly packed first-section text
 
 In testing with the SpatialBench paper, the first translated page showed partial problems: some abstract text remained in English and a side stamp / metadata region was laid out awkwardly. When this happens, do not claim the translation is flawless. Flag the page and suggest one or more targeted retries.
+
+## Known Risk: Smoke-Test Cache Reuse
+
+After a page-1 smoke test, a later full translation can appear to skip or only partially translate the first page if the agent reuses the smoke output directory, leaves `-p 1` in the full command, or lets pdf2zh reuse stale cache entries. Avoid this by default:
+
+- Prefer `scripts/run_pdf2zh_workflow.py` for single-paper translation.
+- Keep smoke output and full output in separate directories.
+- Pass `--ignore-cache` when moving from smoke testing to full translation.
+- Confirm the full command does not include `-p 1`.
+- In QA, inspect page 1 of `mono.pdf`; if title, caption, or abstract text remains unexpectedly English-heavy, rerun the full translation with `--ignore-cache` into a fresh directory.
 
 Recommended debugging sequence:
 
